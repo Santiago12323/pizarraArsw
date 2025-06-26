@@ -1,51 +1,39 @@
-# Vite & HeroUI Template
+# 🖌️ React PaintBoard + Whiteboard Page
 
-This is a template for creating applications using Vite and HeroUI (v2).
+Este proyecto es una aplicación React sencilla que permite al usuario dibujar en una pizarra (`canvas`) con controles de color, grosor, borrador y limpieza. Incluye una entrada de nombre como parte de la interfaz.
 
-[Try it on CodeSandbox](https://githubbox.com/frontio-ai/vite-template)
+---
 
-## Technologies Used
+## 🚀 Características
 
-- [Vite](https://vitejs.dev/guide/)
-- [HeroUI](https://heroui.com)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [Framer Motion](https://www.framer.com/motion)
+- Dibujar en canvas con el mouse.
+- Cambiar el color del trazo.
+- Ajustar el grosor del trazo.
+- Alternar entre lápiz y borrador.
+- Limpiar toda la pizarra.
+- Captura de nombre del usuario.
+- Arquitectura basada en componentes reutilizables.
 
-## How to Use
+---
 
-To clone the project, run the following command:
+---
 
-```bash
-git clone https://github.com/frontio-ai/vite-template.git
-```
+## ▶️ Uso
 
-### Install dependencies
-
-You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
+### 1. Instalar dependencias
 
 ```bash
 npm install
 ```
 
-### Run the development server
+## 🧠 Requisitos Previos
 
-```bash
-npm run dev
-```
+- React 18+
+- TypeScript
+- *(Opcional)* Tailwind CSS para estilos
 
-### Setup pnpm (optional)
+---
 
-If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
+## 📷 Vista previa
 
-```bash
-public-hoist-pattern[]=*@heroui/*
-```
-
-After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
-
-## License
-
-Licensed under the [MIT license](https://github.com/frontio-ai/vite-template/blob/main/LICENSE).
-# pizarraArsw
+![alt text](image.png)
