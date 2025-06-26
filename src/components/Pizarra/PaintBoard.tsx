@@ -1,6 +1,11 @@
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 
-const PaintBoard = () => {
+export type PaintBoardHandle = {
+  clearAll: () => void;
+  clearLast: () => void;
+};
+
+const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -8,6 +13,8 @@ const PaintBoard = () => {
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(5);
   const [isErasing, setIsErasing] = useState(false);
+
+  const linesRef = useRef<any[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,7 +49,7 @@ const PaintBoard = () => {
     if (isErasing) {
       ctxRef.current.strokeStyle = color;
     } else {
-      ctxRef.current.strokeStyle = '#ffffff'; 
+      ctxRef.current.strokeStyle = '#ffffff';
     }
     setIsErasing(!isErasing);
   };
@@ -52,8 +59,18 @@ const PaintBoard = () => {
     const ctx = ctxRef.current;
     if (canvas && ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      linesRef.current = [];
     }
   };
+
+  const clearLast = () => {
+    clearCanvas();
+  };
+
+  useImperativeHandle(ref, () => ({
+    clearAll: clearCanvas,
+    clearLast: clearLast,
+  }));
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!ctxRef.current) return;
@@ -143,6 +160,6 @@ const PaintBoard = () => {
       />
     </div>
   );
-};
+});
 
 export default PaintBoard;
