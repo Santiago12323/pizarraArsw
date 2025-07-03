@@ -8,13 +8,15 @@ export type PaintBoardHandle = {
 const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(5);
   const [isErasing, setIsErasing] = useState(false);
 
-  const linesRef = useRef<any[]>([]);
+  // Para controlar si el evento es local o remoto y evitar bucles
+  const isRemoteDrawing = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -30,6 +32,36 @@ const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     ctxRef.current = ctx;
+
+    // Configurar WebSocket
+    wsRef.current = new WebSocket('ws://localhost:8081/bbService'); // Cambia URL según tu backend
+
+    wsRef.current.onopen = () => {
+      console.log('Conectado al WebSocket');
+    };
+
+    wsRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'draw') {
+        // Evitar que el evento remoto cambie el estado local
+        isRemoteDrawing.current = true;
+        drawRemotePoint(data);
+        isRemoteDrawing.current = false;
+      }
+    };
+
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    wsRef.current.onclose = () => {
+      console.log('WebSocket cerrado');
+    };
+
+    return () => {
+      wsRef.current?.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -59,7 +91,6 @@ const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
     const ctx = ctxRef.current;
     if (canvas && ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      linesRef.current = [];
     }
   };
 
@@ -72,12 +103,29 @@ const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
     clearLast: clearLast,
   }));
 
+  const sendDrawMessage = (x: number, y: number, isDrawingFlag: boolean) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const message = {
+      type: 'draw',
+      x,
+      y,
+      color: isErasing ? '#ffffff' : color,
+      lineWidth,
+      isDrawing: isDrawingFlag,
+    };
+    wsRef.current.send(JSON.stringify(message));
+  };
+
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!ctxRef.current) return;
 
     ctxRef.current.beginPath();
     ctxRef.current.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     setIsDrawing(true);
+
+    if (!isRemoteDrawing.current) {
+      sendDrawMessage(e.nativeEvent.offsetX, e.nativeEvent.offsetY, true);
+    }
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -85,12 +133,48 @@ const PaintBoard = forwardRef<PaintBoardHandle>((_props, ref) => {
 
     ctxRef.current.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     ctxRef.current.stroke();
+
+    if (!isRemoteDrawing.current) {
+      sendDrawMessage(e.nativeEvent.offsetX, e.nativeEvent.offsetY, true);
+    }
   };
 
   const stopDrawing = () => {
     if (!ctxRef.current) return;
     ctxRef.current.closePath();
     setIsDrawing(false);
+
+    if (!isRemoteDrawing.current) {
+      sendDrawMessage(0, 0, false);
+    }
+  };
+
+  const drawRemotePoint = (data: {
+    x: number;
+    y: number;
+    color: string;
+    lineWidth: number;
+    isDrawing: boolean;
+  }) => {
+    if (!ctxRef.current) return;
+
+    ctxRef.current.strokeStyle = data.color;
+    ctxRef.current.lineWidth = data.lineWidth;
+
+    if (data.isDrawing) {
+      ctxRef.current.lineTo(data.x, data.y);
+      ctxRef.current.stroke();
+    } else {
+      ctxRef.current.closePath();
+      ctxRef.current.beginPath();
+    }
+
+    if (!isErasing) {
+      ctxRef.current.strokeStyle = color;
+      ctxRef.current.lineWidth = lineWidth;
+    } else {
+      ctxRef.current.strokeStyle = '#ffffff';
+    }
   };
 
   return (
